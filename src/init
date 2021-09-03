@@ -1,0 +1,56 @@
+#!/bin/bash
+
+#                    n,
+#                  _/ | _
+#                 /'  `'/
+#               <~    .'
+#               .'    |
+#             _/      |
+#           _/      `.`.
+#      ____/ '   \__ | |______
+#   __/___/      /__\ \ \     \___
+#  /  (___.'\_______)\_|_|        \
+# |\________                       ~~~~~\
+# ||       |\___________________________/|
+#
+# bsys is used to provide system information
+
+# getting current script folder
+dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# detecting the current os
+if [ "$(uname)" == "Darwin" ]; then
+    export BSYS_OS="osx"
+
+    # in osx ignoring the last part of product version (xx.xx.XX) is about the system update version,
+    # since apps should be completely compatible across them there is no need to include it as part of
+    # the os version
+    export BSYS_OS_VERSION=`sw_vers -productVersion | grep -oE '[0-9]*.[0-9]*' | head -n 1`
+
+elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+    export BSYS_OS="linux"
+
+    # figuring out the linux version (centos or ubuntu)
+    osName=$(cat /etc/lsb-release | grep -Po '(?<=DISTRIB_ID=).*' | awk '{print tolower($0)}')
+    osVersion=$(cat /etc/lsb-release | grep -Po '(?<=DISTRIB_RELEASE=).*')
+
+    export BSYS_OS_VERSION=$osName$osVersion
+
+elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
+    export BSYS_OS="windows"
+fi
+
+# initializing
+if [ -z "$BSYS_OS_VERSION" ]; then
+    echo "COULD NOT RESOLVE BSYS_OS_VERSION!" >&2
+fi
+
+# tells what is the host information, for instance 'company-wk-0003'
+# Note: this can be overridden through a "postInit" script inside of sys-config
+export BSYS_HOST_PREFIX=`echo $HOSTNAME | grep -oE '\w*' | head -n 1 | tail -n 1`
+export BSYS_HOST_TYPE=`echo $HOSTNAME | grep -oE '\w*' | head -n 2 | tail -n 1`
+export BSYS_HOST_INDEX=`echo $HOSTNAME | grep -oE '[0-9]*' | head -n 3 | tail -n 1`
+
+# used to write metadata information (keep in mind the data under this folder
+# is volatile)
+export BSYS_LOCAL_DATA="$HOME/.local/share/backbone"
